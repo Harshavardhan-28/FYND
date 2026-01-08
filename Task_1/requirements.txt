@@ -1,0 +1,20 @@
+# --- Data Manipulation ---
+pandas>=2.0.0
+numpy>=1.24.0
+
+# --- LLM API (New Gemini SDK) ---
+# NOTE: This is the modern SDK (v1.0+), NOT 'google-generativeai'
+google-genai>=1.0.0
+
+# --- Validation & Schema ---
+pydantic>=2.5.0
+
+# --- Metrics & Evaluation ---
+scikit-learn>=1.3.0
+
+# --- Visualization ---
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# --- Utilities (Async Progress Bars) ---
+tqdm>=4.66.0
