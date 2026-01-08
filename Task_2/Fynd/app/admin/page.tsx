@@ -6,8 +6,10 @@ import { ref, query, limitToLast, onValue, off, type DataSnapshot } from 'fireba
 import type { ReviewDocument } from '@/lib/types';
 import { 
   Star, MessageSquare, Lightbulb, Tags, HeartPulse, Zap, X, Eye, 
-  Download, ThumbsUp, ThumbsDown, Filter, Trash2 
+  Download, ThumbsUp, ThumbsDown, Filter, Trash2, Info, FileText 
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+
 
 interface ReviewWithId extends ReviewDocument {
   id: string;
@@ -25,6 +27,11 @@ export default function AdminDashboard() {
 
   // AI Feedback State
   const [aiRatings, setAiRatings] = useState<Record<string, 'up' | 'down'>>({});
+
+  // Report Generation State
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportContent, setReportContent] = useState('');
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   // Analytics
   const totalReviews = reviews.length;
@@ -217,6 +224,28 @@ export default function AdminDashboard() {
     setAiRatings(prev => ({ ...prev, [id]: rating }));
     console.log(`AI rated for review ${id}: ${rating === 'up' ? 'Accurate' : 'Inaccurate'}`);
   };
+
+  const handleGenerateReport = async (force: boolean | unknown = false) => {
+    setShowReportModal(true);
+    // If called via event (header button), force is an Event object (truthy but not true)
+    // If called via regenerate button, force is true
+    const shouldFetch = force === true || !reportContent;
+
+    if (!shouldFetch) return;
+    
+    setIsGeneratingReport(true);
+    try {
+      const res = await fetch('/api/report', { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to generate report');
+      const data = await res.json();
+      setReportContent(data.report);
+    } catch (err) {
+      console.error(err);
+      setReportContent('**Error:** Failed to generate intelligence report. Please try again.');
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
     
   return (
     <div className="min-h-screen bg-gray-50 relative">
@@ -337,6 +366,84 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* Insight Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+             <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50">
+              <div className="flex items-center gap-3">
+                <div className="bg-purple-100 p-2 rounded-lg">
+                  <FileText className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Executive Intelligence Brief</h3>
+                  <p className="text-sm text-gray-500">Live analysis of last 50 reviews</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowReportModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                disabled={isGeneratingReport}
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="p-8 overflow-y-auto flex-1">
+              {isGeneratingReport ? (
+                <div className="flex flex-col items-center justify-center h-64 space-y-4">
+                  <div className="relative">
+                    <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Zap className="w-6 h-6 text-purple-600 animate-pulse" />
+                    </div>
+                  </div>
+                  <div className="text-center space-y-1">
+                    <h4 className="text-lg font-semibold text-gray-900">Generating Insights...</h4>
+                    <p className="text-gray-500">Reading database • analyzing patterns • drafting report</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="prose prose-purple max-w-none">
+                  {/* React Markdown Rendering */}
+                  <ReactMarkdown
+                    components={{
+                      h1: ({node, ...props}) => <h1 className="text-2xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200" {...props} />,
+                      h2: ({node, ...props}) => <h2 className="text-lg font-semibold text-purple-700 mt-6 mb-3 flex items-center gap-2" {...props} />,
+                      h3: ({node, ...props}) => <h3 className="text-base font-semibold text-gray-800 mt-4 mb-2" {...props} />,
+                      ul: ({node, ...props}) => <ul className="list-disc list-inside space-y-2 mb-4 text-gray-700" {...props} />,
+                      ol: ({node, ...props}) => <ol className="list-decimal list-inside space-y-2 mb-4 text-gray-700" {...props} />,
+                      li: ({node, ...props}) => <li className="ml-2" {...props} />,
+                      p: ({node, ...props}) => <p className="mb-4 text-gray-700 leading-relaxed" {...props} />,
+                      strong: ({node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
+                      blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-200 pl-4 italic text-gray-600 my-4" {...props} />,
+                    }}
+                  >
+                    {reportContent}
+                  </ReactMarkdown>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3">
+              <button
+                onClick={() => handleGenerateReport(true)}
+                className="px-4 py-2 text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-lg font-medium transition-colors"
+                disabled={isGeneratingReport}
+              >
+                Regenerate
+              </button>
+              <button
+                onClick={() => setShowReportModal(false)}
+                className="px-6 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex justify-between items-center">
@@ -345,13 +452,22 @@ export default function AdminDashboard() {
             <p className="text-gray-600 mt-1">Real-time customer feedback analytics</p>
           </div>
           
-          <button
-            onClick={handleExportCSV}
-            className="inline-flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm text-sm font-medium"
-          >
-            <Download className="w-4 h-4" />
-            Export CSV
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleGenerateReport}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-lg font-medium shadow-md hover:shadow-lg hover:from-purple-700 hover:to-indigo-700 transition-all transform hover:-translate-y-0.5"
+            >
+              <FileText className="w-4 h-4" />
+              Generate Executive Brief
+            </button>
+            <button
+              onClick={handleExportCSV}
+              className="inline-flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm text-sm font-medium"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
+            </button>
+          </div>
         </div>
       </header>
 
@@ -361,8 +477,17 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Reviews</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{totalReviews}</p>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <p className="text-sm font-medium text-gray-600">Total Reviews</p>
+                  <div className="group relative">
+                    <Info className="w-4 h-4 text-gray-400 cursor-help hover:text-blue-500 transition-colors" />
+                    <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2.5 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-20 text-center leading-relaxed">
+                      Total number of feedback submissions received from users.
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-3xl font-bold text-gray-900">{totalReviews}</p>
               </div>
               <div className="bg-blue-100 p-3 rounded-full">
                 <MessageSquare className="w-8 h-8 text-blue-600" />
@@ -373,7 +498,16 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Avg Rating</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-medium text-gray-600">Avg Rating</p>
+                  <div className="group relative">
+                    <Info className="w-4 h-4 text-gray-400 cursor-help hover:text-blue-500 transition-colors" />
+                     <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2.5 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-20 text-center leading-relaxed">
+                      The average star rating (1-5) across all submitted reviews.
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
                 <div className="flex items-center gap-2 mt-2">
                   <p className="text-3xl font-bold text-gray-900">{averageRating}</p>
                   <Star className="w-6 h-6 fill-yellow-400 text-yellow-400" />
@@ -388,7 +522,16 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Avg Sentiment</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-medium text-gray-600">Avg Sentiment</p>
+                  <div className="group relative">
+                    <Info className="w-4 h-4 text-gray-400 cursor-help hover:text-blue-500 transition-colors" />
+                    <div className="invisible group-hover:visible absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2.5 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-20 text-center leading-relaxed">
+                      AI-calculated sentiment score (0-100) indicating emotional tone.
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
                 <div className="flex items-center gap-2 mt-2">
                   <p className="text-3xl font-bold text-gray-900">{averageSentiment}</p>
                   <p className="text-sm text-gray-500">/100</p>
@@ -403,7 +546,16 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Avg Latency</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-medium text-gray-600">Avg Latency</p>
+                  <div className="group relative">
+                    <Info className="w-4 h-4 text-gray-400 cursor-help hover:text-blue-500 transition-colors" />
+                    <div className="invisible group-hover:visible absolute bottom-full -left-12 sm:bottom-full sm:left-1/2 sm:-translate-x-1/2 mb-2 w-48 p-2.5 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-20 text-center leading-relaxed">
+                       Average time taken (in ms) for the AI to process and analyze reviews.
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
                 <div className="flex items-center gap-2 mt-2">
                   <p className="text-3xl font-bold text-gray-900">{averageLatency}</p>
                   <p className="text-sm text-gray-500">ms</p>
