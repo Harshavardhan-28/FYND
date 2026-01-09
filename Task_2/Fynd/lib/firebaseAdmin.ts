@@ -25,6 +25,30 @@ export function getFirebaseAdmin(): { app: App; database: Database } {
     }
 
     let serviceAccount;
+
+    const parseServiceAccount = (raw: string) => {
+      const value = raw.trim();
+
+      // 1) Try direct JSON
+      try {
+        return JSON.parse(value);
+      } catch {
+        // continue
+      }
+
+      // 2) Try base64 JSON (optionally prefixed with "base64:")
+      try {
+        const b64 = value.startsWith('base64:') ? value.slice('base64:'.length).trim() : value;
+        const decoded = Buffer.from(b64, 'base64').toString('utf8');
+        return JSON.parse(decoded);
+      } catch {
+        // continue
+      }
+
+      throw new Error(
+        'FIREBASE_SERVICE_ACCOUNT_KEY is invalid. Provide JSON string or base64-encoded JSON (optionally prefixed with "base64:").'
+      );
+    };
     
     // Try to load from file first (easier for development)
     const serviceAccountPath = path.join(process.cwd(), 'serviceAccountKey.json');
@@ -32,7 +56,7 @@ export function getFirebaseAdmin(): { app: App; database: Database } {
       serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
     } else if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
       // Fallback to environment variable
-      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+      serviceAccount = parseServiceAccount(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
     } else {
       throw new Error('Firebase service account not found. Create serviceAccountKey.json or set FIREBASE_SERVICE_ACCOUNT_KEY');
     }
