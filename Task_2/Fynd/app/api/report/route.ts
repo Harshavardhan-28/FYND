@@ -23,10 +23,18 @@ export async function POST() {
     }
 
     // Convert object to array and simplify for token efficiency
-    const reviewsList = Object.values(reviewsData).map((r: any) => ({
+    const reviewsList = Object.values(reviewsData as Record<string, {
+      rating: number;
+      reviewText?: string;
+      review?: string;
+      createdAt?: string | number;
+      timestamp?: string | number;
+      ai_sentiment?: number;
+      ai_tags?: string[];
+    }>).map((r) => ({
       rating: r.rating,
       text: r.reviewText || r.review, // Handle both field names if legacy data exists
-      date: new Date(r.createdAt || r.timestamp).toISOString().split('T')[0],
+      date: new Date(r.createdAt || r.timestamp || Date.now()).toISOString().split('T')[0],
       sentiment: r.ai_sentiment,
       tags: r.ai_tags
     }));

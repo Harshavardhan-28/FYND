@@ -407,15 +407,15 @@ export default function AdminDashboard() {
                   {/* React Markdown Rendering */}
                   <ReactMarkdown
                     components={{
-                      h1: ({node, ...props}) => <h1 className="text-2xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200" {...props} />,
-                      h2: ({node, ...props}) => <h2 className="text-lg font-semibold text-purple-700 mt-6 mb-3 flex items-center gap-2" {...props} />,
-                      h3: ({node, ...props}) => <h3 className="text-base font-semibold text-gray-800 mt-4 mb-2" {...props} />,
-                      ul: ({node, ...props}) => <ul className="list-disc list-inside space-y-2 mb-4 text-gray-700" {...props} />,
-                      ol: ({node, ...props}) => <ol className="list-decimal list-inside space-y-2 mb-4 text-gray-700" {...props} />,
-                      li: ({node, ...props}) => <li className="ml-2" {...props} />,
-                      p: ({node, ...props}) => <p className="mb-4 text-gray-700 leading-relaxed" {...props} />,
-                      strong: ({node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
-                      blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-purple-200 pl-4 italic text-gray-600 my-4" {...props} />,
+                      h1: ({node: _node, ...props}) => <h1 className="text-2xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-200" {...props} />,
+                      h2: ({node: _node, ...props}) => <h2 className="text-lg font-semibold text-purple-700 mt-6 mb-3 flex items-center gap-2" {...props} />,
+                      h3: ({node: _node, ...props}) => <h3 className="text-base font-semibold text-gray-800 mt-4 mb-2" {...props} />,
+                      ul: ({node: _node, ...props}) => <ul className="list-disc list-inside space-y-2 mb-4 text-gray-700" {...props} />,
+                      ol: ({node: _node, ...props}) => <ol className="list-decimal list-inside space-y-2 mb-4 text-gray-700" {...props} />,
+                      li: ({node: _node, ...props}) => <li className="ml-2" {...props} />,
+                      p: ({node: _node, ...props}) => <p className="mb-4 text-gray-700 leading-relaxed" {...props} />,
+                      strong: ({node: _node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
+                      blockquote: ({node: _node, ...props}) => <blockquote className="border-l-4 border-purple-200 pl-4 italic text-gray-600 my-4" {...props} />,
                     }}
                   >
                     {reportContent}
