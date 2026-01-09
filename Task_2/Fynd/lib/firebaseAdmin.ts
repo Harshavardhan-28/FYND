@@ -29,17 +29,13 @@ export function getFirebaseAdmin(): { app: App; database: Database } {
     // Try to load from file first (easier for development)
     const serviceAccountPath = path.join(process.cwd(), 'serviceAccountKey.json');
     if (fs.existsSync(serviceAccountPath)) {
-      console.log('Loading service account from serviceAccountKey.json');
       serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
     } else if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
       // Fallback to environment variable
-      console.log('Loading service account from environment variable');
       serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
     } else {
       throw new Error('Firebase service account not found. Create serviceAccountKey.json or set FIREBASE_SERVICE_ACCOUNT_KEY');
     }
-
-    console.log('Initializing Firebase Admin with database URL:', process.env.FIREBASE_DATABASE_URL);
 
     app = initializeApp({
       credential: cert(serviceAccount),

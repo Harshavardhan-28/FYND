@@ -222,7 +222,6 @@ export default function AdminDashboard() {
   const handleRateAI = (e: React.MouseEvent, id: string, rating: 'up' | 'down') => {
     e.stopPropagation();
     setAiRatings(prev => ({ ...prev, [id]: rating }));
-    console.log(`AI rated for review ${id}: ${rating === 'up' ? 'Accurate' : 'Inaccurate'}`);
   };
 
   const handleGenerateReport = async (force: boolean | unknown = false) => {
